@@ -55,6 +55,6 @@ end
 
 Usage:
 
-```bash
+```fish
 resolve_convert my_gameplay.mkv
 ```
