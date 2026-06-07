@@ -1,61 +1,171 @@
-# OBS to DaVinci Resolve (Linux Free Version) Workflow Guide
+# FFmpeg DaVinci Converter
 
-This guide outlines the optimal workflow for recording video in OBS and preparing it for DaVinci Resolve Free on Linux, bypassing proprietary codec limitations.
+A streamlined workflow automation tool for converting OBS recordings into DaVinci Resolve-compatible formats on Linux. This project bridges the gap between OBS QuickSync recording and DaVinci Resolve's codec requirements.
 
-## 1. OBS Recording Settings
+## Overview
 
-**In OBS > Settings > Output > Recording (Advanced Mode):**
+**FFmpeg DaVinci Converter** automates the transcoding process from OBS MKV recordings (QuickSync HEVC) to DNxHR MOV files that are fully compatible with DaVinci Resolve Free on Linux. This eliminates codec limitations and ensures seamless video editing without quality loss.
 
-- **Recording Format:** `mkv` (Crash-safe).
-- **Video Encoder:** `QuickSync HEVC` (or `QuickSync H.264`). This ensures smooth recording via your Intel media engine.
-- **Audio Encoder:** `PCM` (e.g., `pcm_s16le` or `32-bit float`). _Crucial step to prevent muted audio in Resolve._
+## Features
 
-## 2. The Transcoding Command
+✨ **Automated Transcoding** - Convert OBS recordings to Resolve-friendly formats with a single command  
+🎬 **DNxHR Codec Support** - Uses industry-standard intermediate codec for professional editing  
+🐚 **Fish Shell Integration** - Custom shell function for quick, intuitive conversion  
+🔧 **FFmpeg-Based** - Leverages the powerful FFmpeg library for reliable, lossless conversion  
+📦 **MKV to MOV** - Handles containerization from MKV (crash-safe) to MOV (edit-friendly)  
 
-Before importing into DaVinci Resolve, you must convert the compressed QuickSync footage into an edit-friendly intermediate codec (DNxHR) wrapped in a MOV container.
+## Quick Start
 
-**The Core FFmpeg Command:**
+### Prerequisites
+
+- **FFmpeg** - Ensure FFmpeg is installed and in your PATH
+- **Fish Shell** - The automation function is designed for Fish shell (or adapt to your shell)
+- **Linux** - Tested on Linux systems
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/AsithaKanchana1/ffmpeg_conv_Davinci-.git
+   cd ffmpeg_conv_Davinci-
+   ```
+
+2. **Set up the Fish shell function:**
+   ```bash
+   cp resolve_convert.fish ~/.config/fish/functions/
+   ```
+
+3. **Verify installation:**
+   ```bash
+   resolve_convert --help
+   ```
+
+## Usage
+
+### Basic Command
+
+Convert a single OBS recording:
+
+```bash
+resolve_convert my_recording.mkv
+```
+
+This generates `my_recording_edit.mov`, ready for DaVinci Resolve.
+
+### Manual FFmpeg Command
+
+If you prefer not to use the Fish shell function:
 
 ```bash
 ffmpeg -i input_recording.mkv -map 0 -c:v dnxhd -profile:v dnxhr_sq -c:a pcm_s16le output_editing.mov
 ```
 
-## 3. Fish Shell Automation
+### Command Parameters
 
-To automate this process in the fish shell, you create a dedicated function file.
+- `-i input_recording.mkv` - Input file (OBS recording)
+- `-map 0` - Maps all streams from input
+- `-c:v dnxhd` - Video codec (DNxHD)
+- `-profile:v dnxhr_sq` - DNxHR quality profile (SQ = Standard Quality)
+- `-c:a pcm_s16le` - Audio codec (PCM 16-bit)
+- `output_editing.mov` - Output file (Resolve-compatible)
 
-**Step 1:** Create a new file in your fish functions directory:
+## Recording Settings (OBS)
 
-```bash
-nvim ~/.config/fish/functions/resolve_convert.fish
+For optimal results, configure OBS with these settings before recording:
+
+**Settings > Output > Recording (Advanced Mode)**
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| Recording Format | MKV | Crash-safe format |
+| Video Encoder | QuickSync HEVC or H.264 | Uses Intel media engine |
+| Audio Encoder | PCM (pcm_s16le or 32-bit float) | Critical: prevents muted audio in Resolve |
+
+## Workflow
+
+```
+OBS Recording (MKV + QuickSync HEVC)
+         ↓
+FFmpeg DaVinci Converter (Transcoding)
+         ↓
+DNxHR MOV Output
+         ↓
+Import to DaVinci Resolve
 ```
 
-**Step 2:** Paste the following fish syntax:
+## Technical Details
 
-```fish
-function resolve_convert -d "Convert OBS MKV to DaVinci Resolve friendly DNxHR MOV"
-    if test -z "$argv[1]"
-        echo "Usage: resolve_convert <input_file.mkv>"
-        return 1
-    end
+### Why DNxHR?
 
-    set input_file $argv[1]
-    set base_name (basename $input_file .mkv)
-    set output_file "$base_name"_edit.mov
+- **Resolve Compatibility** - Natively supported by DaVinci Resolve (Free version)
+- **Professional Quality** - Intermediate codec standard in film/video production
+- **No Proprietary Codecs** - Avoids licensing issues on Linux
+- **Efficient Editing** - Optimized for timeline performance
 
-    echo "Transcoding '$input_file' to '$output_file'..."
-    ffmpeg -i "$input_file" -map 0 -c:v dnxhd -profile:v dnxhr_sq -c:a pcm_s16le "$output_file"
-    echo "Done! Ready for Resolve."
-end
+### Audio Handling
+
+- Converts QuickSync audio to PCM 16-bit
+- Prevents silent audio issues in Resolve
+- Maintains full fidelity
+
+## Compatibility
+
+- ✅ Linux (tested on Ubuntu 20.04+, Fedora, etc.)
+- ✅ DaVinci Resolve Free (Linux)
+- ✅ OBS Studio
+- ✅ Fish Shell 3.0+
+- ⚠️ macOS/Windows: Adapt the Fish function to Bash/Zsh
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| FFmpeg not found | Install FFmpeg: `sudo apt install ffmpeg` (Ubuntu/Debian) or `sudo dnf install ffmpeg` (Fedora) |
+| Fish function not loading | Ensure file is in `~/.config/fish/functions/` and named correctly |
+| Silent audio in Resolve | Verify OBS audio encoder is set to PCM (not AAC or MP3) |
+| Slow conversion | Use `-profile:v dnxhr_hq` for higher quality (slower) or `-profile:v dnxhr_lb` for faster conversion |
+
+## Performance Tips
+
+- **Faster Conversion:** Use `dnxhr_lb` (Low Bitrate) profile
+- **Higher Quality:** Use `dnxhr_hq` (High Quality) profile
+- **SSD Storage:** Store input and output files on SSD for optimal speed
+
+## File Structure
+
+```
+ffmpeg_conv_Davinci-/
+├── README.md                    # Project documentation
+├── resolve_convert.fish         # Fish shell function
+└── examples/
+    └── sample_workflow.md       # Workflow examples
 ```
 
-**Step 3:** Save the file. Fish will automatically load it.
+## Contributing
 
-**Usage:**
-Navigate to your recordings directory in Kitty, and run:
+Contributions are welcome! Feel free to:
+- Report issues
+- Suggest improvements
+- Submit pull requests
+- Share workflow tips
 
-```bash
-resolve_convert my_gameplay.mkv
-```
+## License
 
-This will instantly generate `my_gameplay_edit.mov`, fully compliant and ready to be dropped directly into the DaVinci Resolve media pool.
+This project is provided as-is for educational and professional use.
+
+## References
+
+- [FFmpeg Documentation](https://ffmpeg.org/documentation.html)
+- [DaVinci Resolve Free](https://www.blackmagicdesign.com/products/davinciresolve/)
+- [OBS Studio](https://obsproject.com/)
+- [Fish Shell Documentation](https://fishshell.com/docs/current/)
+
+## Support
+
+For issues, questions, or suggestions, please open an [issue on GitHub](https://github.com/AsithaKanchana1/ffmpeg_conv_Davinci-/issues).
+
+---
+
+**Happy editing!** 🎥✂️
+
+Last updated: June 2026
